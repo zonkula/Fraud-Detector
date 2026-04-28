@@ -41,6 +41,7 @@ st.header("1. Load & Explore Data")
 try:
     df = load_data()
     st.success(f"Dataset loaded successfully! Shape: {df.shape}")
+    st.write(df.columns.tolist())
     st.dataframe(df.head())
 except Exception as e:
     st.error("Failed to load data. Make sure the Google Drive link is set to 'Anyone with the link'.")
