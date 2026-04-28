@@ -30,10 +30,11 @@ st.title("Fraud Detection - CIS 412 Final Project")
 # ==========================================
 @st.cache_data
 def load_data():
-    # Google Drive direct download link
-    # Replace FILE_ID with your actual file ID from the sharing link
-    url = "https://drive.google.com/uc?id=12rpuwS4zq2O3W4_YPoCsPG4CDFKDvYt2&export=download"
-    df = pd.read_csv(url, low_memory=False)
+    import gdown
+    url = "https://drive.google.com/uc?id=12rpuwS4zq2O3W4_YPoCsPG4CDFKDvYt2"
+    output = "Frauddata.csv"
+    gdown.download(url, output, quiet=False)
+    df = pd.read_csv(output, low_memory=False)
     return df
 
 st.header("1. Load & Explore Data")
