@@ -31,19 +31,26 @@ st.title("Fraud Detection - CIS 412 Final Project")
 @st.cache_data
 def load_data():
     import gdown
+    import os
     url = "https://drive.google.com/uc?id=12rpuwS4zq2O3W4_YPoCsPG4CDFKDvYt2"
     output = "Frauddata.csv"
-    gdown.download(url, output, quiet=False)
+    if not os.path.exists(output):
+        gdown.download(url, output, quiet=False)
     df = pd.read_csv(output, low_memory=False)
-    return df
+    # Sample immediately to save memory
+    fraud = df[df['isFraud'] == 1]
+    non_fraud = df[df['isFraud'] == 0].sample(n=len(fraud) * 10, random_state=0)
+    original_shape = df.shape
+    original_counts = df['isFraud'].value_counts()
+    df_sampled = pd.concat([fraud, non_fraud]).sample(frac=1, random_state=0)
+    return df_sampled, original_shape, original_counts
 
 st.header("1. Load & Explore Data")
 
 try:
-    df = load_data()
-    st.success(f"Dataset loaded successfully! Shape: {df.shape}")
-    st.write(df.columns.tolist())
-    st.dataframe(df.head())
+    df_sampled, original_shape, original_counts = load_data()
+    st.success(f"Full dataset shape: {original_shape}")
+    st.dataframe(df_sampled.head())
 except Exception as e:
     st.error("Failed to load data. Make sure the Google Drive link is set to 'Anyone with the link'.")
     st.error(str(e))
@@ -52,65 +59,17 @@ except Exception as e:
 # ==========================================
 # 2. Check original fraud distribution
 # ==========================================
-st.header("2. Original Fraud Distribution")
+st.header("2. Data Distribution")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    st.write("**Class Counts:**")
-    st.write(df['isFraud'].value_counts())
-    st.write("**Class Percentages:**")
-    st.write(df['isFraud'].value_counts(normalize=True) * 100)
+    st.write("**Original Class Counts:**")
+    st.write(original_counts)
 
 with col2:
-    before_counts = df['isFraud'].value_counts()
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.pie(
-        before_counts,
-        labels=['Non-Fraud', 'Fraud'],
-        autopct='%1.1f%%',
-        startangle=90
-    )
-    ax.set_title('Class Distribution Before Balancing')
-    st.pyplot(fig)
-    plt.clf()
-
-# ==========================================
-# 3. Balance dataset (1:10 ratio)
-# ==========================================
-st.header("3. Balance Dataset (1:10 Ratio)")
-
-fraud = df[df['isFraud'] == 1]
-non_fraud = df[df['isFraud'] == 0]
-
-st.write(f"Fraud rows: {len(fraud)}")
-st.write(f"Non-fraud rows: {len(non_fraud)}")
-
-non_fraud_sample = non_fraud.sample(n=len(fraud) * 10, random_state=0)
-df_sampled = pd.concat([fraud, non_fraud_sample])
-df_sampled = df_sampled.sample(frac=1, random_state=0)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.write("**Balanced Class Counts:**")
+    st.write("**Sampled Class Counts (1:10 ratio):**")
     st.write(df_sampled['isFraud'].value_counts())
-    st.write("**Balanced Class Percentages:**")
-    st.write(df_sampled['isFraud'].value_counts(normalize=True) * 100)
-
-with col2:
-    after_counts = df_sampled['isFraud'].value_counts()
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.pie(
-        after_counts,
-        labels=['Non-Fraud', 'Fraud'],
-        autopct='%1.1f%%',
-        startangle=90
-    )
-    ax.set_title('Class Distribution After Balancing')
-    st.pyplot(fig)
-    plt.clf()
-
 # ==========================================
 # 4. Data cleaning
 # ==========================================
